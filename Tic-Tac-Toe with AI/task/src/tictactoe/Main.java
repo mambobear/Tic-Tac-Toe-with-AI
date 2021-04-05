@@ -1,18 +1,17 @@
 package tictactoe;
 
+import java.util.Random;
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter the cells: ");
-        String state = scanner.next();
-
-        Game game = new Game(state);
-        game.printGrid();
-        game.makeMove();
+        Game game = new Game();
+        while (game.getStatus() == Game.Status.NOT_FINISHED) {
+            game.printGrid();
+            game.makeMove();
+            game.switchPlayers();
+        }
         game.printGameStatus();
-        game.switchPlayers();
     }
 }
 
@@ -42,27 +41,11 @@ class Game {
     };
 
     private char currentPlayer = 'X';
-    private int nEmptyCells;
-    private Status status;
+    private int nEmptyCells = SIZE * SIZE;
+    private Status status = Status.NOT_FINISHED;
 
-    Game(String state) {
-        int i = 0;
-        int count = 0;
-        this.nEmptyCells = 0;
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 3; col++) {
-                char ch = state.charAt(i++);
-                if (ch != '_') {
-                    grid[row][col] = ch;
-                    count++;
-                }
-            }
-        }
-        if (count % 2 == 1) currentPlayer = 'O';
-        this.nEmptyCells = grid.length * grid.length - count;
-
-        // TODO: Determine the status of the game
-        this.status = Status.NOT_FINISHED;
+    public Status getStatus() {
+        return status;
     }
 
     public void printGrid() {
@@ -78,10 +61,27 @@ class Game {
     }
 
     public void makeMove() {
-        Move move = getMove();
+        Move move = (this.currentPlayer == 'X') ? getUserMove() : makeEasyMove();
         grid[move.row][move.col] = currentPlayer;
         this.nEmptyCells--;
         this.status = getStatusAfter(move);
+    }
+
+    private Move makeEasyMove() {
+        assert this.currentPlayer == 'O';
+        assert this.status == Status.NOT_FINISHED;
+        Random rand = new Random(System.currentTimeMillis());
+        while (true) {
+            int row = rand.nextInt(3);
+            int col = rand.nextInt(3);
+            if (!cellEmpty(row, col)) continue;
+            System.out.println("Making move level \"easy\"");
+            return new Move(row, col);
+        }
+    }
+
+    private boolean cellEmpty(int row, int col) {
+        return grid[row][col] == Empty;
     }
 
     void switchPlayers() {
@@ -153,7 +153,7 @@ class Game {
         return true;
     }
 
-    public Move getMove() {
+    public Move getUserMove() {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Enter the coordinates: ");
@@ -177,8 +177,7 @@ class Game {
                 System.out.println(e.getMessage());
                 continue;
             }
-
-            if (grid[row - 1][col - 1] != Empty) {
+            if (!cellEmpty(row - 1, col - 1)) {
                 System.out.println("This cell is occupied! Choose another one!");
                 continue;
             }

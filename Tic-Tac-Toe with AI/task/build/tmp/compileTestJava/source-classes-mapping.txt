@@ -1,6 +1,6 @@
 TicTacToeTest.java
- Test
  TicTacToeTest
+ TicTacToeTest$1
 Grid.java
  CellState
  GameState
