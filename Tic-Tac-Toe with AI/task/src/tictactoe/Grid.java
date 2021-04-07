@@ -1,7 +1,7 @@
 package tictactoe;
 
 class Grid {
-    class LineStats {
+    static class LineStats {
 
         private int numX;
         private int numO;
@@ -57,7 +57,6 @@ class Grid {
         }
     }
 
-
     // Public methods
     public String toString() {
         StringBuilder strb = new StringBuilder();
@@ -71,11 +70,6 @@ class Grid {
         }
         strb.append("---------\n");
         return strb.toString();
-    }
-
-    public boolean hasLineAt(int row, int col) {
-        char player = this.grid[row][col];
-        return hasRowAt(row, player) || hasColumnAt(col, player) || hasDiagonalAt(row, col, player);
     }
 
     public Game.Move winningMoveFor(char player, char opponent) {
@@ -111,11 +105,9 @@ class Grid {
         return null;
     }
 
-    public void markMove(Game.Move move, char mark) {
-        grid[move.getRow()][move.getCol()] = mark;
+    public void markCell(int row, int col, char mark) {
+        grid[row][col] = mark;
         this.nEmptyCells--;
-        int row = move.getRow();
-        int col = move.getCol();
         rowAndColumnCounts[ROWS][row].increment(mark);
         rowAndColumnCounts[COLUMNS][col].increment(mark);
         if (row == col) mainDiagonal.increment(mark);
@@ -126,12 +118,18 @@ class Grid {
         return this.grid[row][col] == Empty;
     }
 
-    public boolean isFull() {
-        return this.nEmptyCells == 0;
+    Game.Status statusAfterMove(int row, int col) {
+        if (hasLineAt(row, col)) return (this.grid[row][col] == 'X') ? Game.Status.X_WINS : Game.Status.O_WINS;
+        if (this.nEmptyCells == 0) return Game.Status.DRAW;
+        return Game.Status.NOT_FINISHED;
     }
 
-
     // Private methods
+    private boolean hasLineAt(int row, int col) {
+        char player = this.grid[row][col];
+        return hasRowAt(row, player) || hasColumnAt(col, player) || hasDiagonalAt(row, col, player);
+    }
+
     private boolean hasDiagonalAt(int row, int col, char player) {
         if (row == col) {
             if (player == 'X') return mainDiagonal.numX == SIZE;
@@ -139,8 +137,8 @@ class Grid {
         }
 
         if (row + col == SIZE - 1) {
-            if (player == 'X') return mainDiagonal.numX == SIZE;
-            if (player == 'O') return mainDiagonal.numO == SIZE;
+            if (player == 'X') return antiDiagonal.numX == SIZE;
+            if (player == 'O') return antiDiagonal.numO == SIZE;
         }
 
         return false;
@@ -165,6 +163,4 @@ class Grid {
         }
         return false;
     }
-
-
 }

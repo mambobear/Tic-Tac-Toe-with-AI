@@ -760,6 +760,461 @@ files:
         }
     }
   learner_created: false
+- name: src/tictactoe/Human.java
+  visible: true
+  text: |
+    package tictactoe;
+
+    import java.util.Scanner;
+
+    class Human extends Player {
+        Human(char mark) {
+            super(mark);
+        }
+
+        public Game.Status makeMove() {
+            Scanner scanner = new Scanner(System.in);
+            while (true) {
+                System.out.print("Enter the coordinates: ");
+                int row;
+                int col;
+
+                String[] input = scanner.nextLine().split("\\s+");
+                String rowStr = input[0];
+                try {
+                    row = getCoordinate(rowStr);
+                } catch (IllegalArgumentException e) {
+                    System.out.println(e.getMessage());
+                    continue;
+                }
+
+                String colStr = (input.length == 1) ? scanner.next() : input[1];
+
+                try {
+                    col = getCoordinate(colStr);
+                } catch (IllegalArgumentException e) {
+                    System.out.println(e.getMessage());
+                    continue;
+                }
+                if (!this.grid.isCellEmpty(row - 1, col - 1)) {
+                    System.out.println("This cell is occupied! Choose another one!");
+                    continue;
+                }
+
+                this.grid.markCell(row - 1, col - 1, this.mark);
+                return this.grid.statusAfterMove(row - 1, col - 1);
+            }
+        }
+
+        private int getCoordinate(String coordStr) {
+            try {
+                int coord = Integer.parseInt(coordStr);
+                if (coord < 1 || coord > 3) {
+                    throw new IllegalArgumentException("Coordinates should be from 1 to 3!");
+                }
+                return  coord;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("You should enter numbers!");
+            }
+        }
+    }
+  learner_created: true
+- name: src/tictactoe/Grid.java
+  visible: true
+  text: |
+    package tictactoe;
+
+    class Grid {
+        static class LineStats {
+
+            private int numX;
+            private int numO;
+
+            LineStats() {
+                this.numX = 0;
+                this.numO = 0;
+            }
+
+            private void incX() {
+                if (this.numX < 3) this.numX++;
+            }
+
+            private void incO() {
+                if (this.numO < 3) this.numO++;
+            }
+
+            public void increment(char mark) {
+                if (mark == 'X') this.incX();
+                if (mark == 'O') this.incO();
+            }
+
+            public int numFor(char player) {
+                assert player == 'X' || player == 'O';
+                if (player == 'X') return numX;
+                else return numO;
+            }
+        }
+
+        private final char Empty = ' ';
+
+        private final int ROWS = 0;
+        private final int COLUMNS = 1;
+
+        private final int SIZE = 3;
+        private final char[][] grid = {
+                {Empty, Empty, Empty},
+                {Empty, Empty, Empty},
+                {Empty, Empty, Empty},
+        };
+
+        private int nEmptyCells = SIZE * SIZE;
+
+        LineStats[][] rowAndColumnCounts = new LineStats[2][SIZE];
+        LineStats mainDiagonal = new LineStats();
+        LineStats antiDiagonal = new LineStats();
+
+        Grid() {
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < SIZE; j++) {
+                    this.rowAndColumnCounts[i][j] = new LineStats();
+                }
+            }
+        }
+
+        // Public methods
+        public String toString() {
+            StringBuilder strb = new StringBuilder();
+            strb.append("---------\n");
+            for (char[] row : grid) {
+                strb.append("| ");
+                for (char c : row) {
+                    strb.append(c).append(" ");
+                }
+                strb.append("|\n");
+            }
+            strb.append("---------\n");
+            return strb.toString();
+        }
+
+        public Game.Move winningMoveFor(char player, char opponent) {
+
+            LineStats stats;
+            for (int i = 0; i < SIZE; i++) {
+                stats = rowAndColumnCounts[ROWS][i];
+                if (stats.numFor(player) == 2 && stats.numFor(opponent) == 0) {
+                    for (int col = 0; col < SIZE; col++) {
+                        if (this.grid[i][col] == Empty) return new Game.Move(i, col);
+                    }
+                }
+                stats = rowAndColumnCounts[COLUMNS][i];
+                if (stats.numFor(player) == 2 && stats.numFor(opponent) == 0) {
+                    for (int row = 0; row < SIZE; row++) {
+                        if (this.grid[row][i] == Empty) return new Game.Move(row, i);
+                    }
+                }
+            }
+
+            if (mainDiagonal.numFor(player) == 2 && mainDiagonal.numFor(opponent) == 0) {
+                for (int i = 0; i < SIZE; i++) {
+                    if (this.grid[i][i] == Empty) return new Game.Move(i, i);
+                }
+            }
+
+            if (antiDiagonal.numFor(player) == 2 && antiDiagonal.numFor(opponent) == 0) {
+                for (int i = 0; i < SIZE; i++) {
+                    if (this.grid[i][SIZE - 1 - i] == Empty) return new Game.Move(i, SIZE - 1 - i);
+                }
+            }
+
+            return null;
+        }
+
+        public void markCell(int row, int col, char mark) {
+            grid[row][col] = mark;
+            this.nEmptyCells--;
+            rowAndColumnCounts[ROWS][row].increment(mark);
+            rowAndColumnCounts[COLUMNS][col].increment(mark);
+            if (row == col) mainDiagonal.increment(mark);
+            if (row + col == SIZE - 1) antiDiagonal.increment(mark);
+        }
+
+        public boolean isCellEmpty(int row, int col) {
+            return this.grid[row][col] == Empty;
+        }
+
+        Game.Status statusAfterMove(int row, int col) {
+            if (hasLineAt(row, col)) return (this.grid[row][col] == 'X') ? Game.Status.X_WINS : Game.Status.O_WINS;
+            if (this.nEmptyCells == 0) return Game.Status.DRAW;
+            return Game.Status.NOT_FINISHED;
+        }
+
+        // Private methods
+        private boolean hasLineAt(int row, int col) {
+            char player = this.grid[row][col];
+            return hasRowAt(row, player) || hasColumnAt(col, player) || hasDiagonalAt(row, col, player);
+        }
+
+        private boolean hasDiagonalAt(int row, int col, char player) {
+            if (row == col) {
+                if (player == 'X') return mainDiagonal.numX == SIZE;
+                if (player == 'O') return mainDiagonal.numO == SIZE;
+            }
+
+            if (row + col == SIZE - 1) {
+                if (player == 'X') return antiDiagonal.numX == SIZE;
+                if (player == 'O') return antiDiagonal.numO == SIZE;
+            }
+
+            return false;
+        }
+
+        private boolean hasColumnAt(int col, char player) {
+            if (player == 'X') {
+                return this.rowAndColumnCounts[COLUMNS][col].numO == SIZE;
+            }
+            if (player == 'O') {
+                return this.rowAndColumnCounts[COLUMNS][col].numO == SIZE;
+            }
+            return false;
+        }
+
+        private boolean hasRowAt(int row, char player) {
+            if (player == 'X') {
+                return this.rowAndColumnCounts[ROWS][row].numX == SIZE;
+            }
+            if (player == 'O') {
+                return this.rowAndColumnCounts[ROWS][row].numO == SIZE;
+            }
+            return false;
+        }
+    }
+  learner_created: true
+- name: src/tictactoe/Player.java
+  visible: true
+  text: |
+    package tictactoe;
+
+    abstract class Player {
+
+        final char mark;
+        Grid grid = null;
+
+        abstract Game.Status makeMove();
+
+        Player(char mark) {
+            this.mark = mark;
+        }
+
+        public void setGrid(Grid grid) {
+            this.grid = grid;
+        }
+
+        public char opponent(char mark) {
+            return mark == 'X' ? 'O' : 'X';
+        }
+
+        Game.Move winningMoveFor(char mark) {
+            return this.grid.winningMoveFor(mark, opponent(mark));
+        }
+    }
+
+    class PlayerCreator {
+        public static Player createPlayer(String playerType, char mark) {
+            if ("easy".equals(playerType)) {
+                return new Computer(mark, Computer.ComputerLevel.EASY);
+            }
+
+            if ("medium".equals(playerType)) {
+                return new Computer(mark, Computer.ComputerLevel.MEDIUM);
+            }
+
+            if ("hard".equals(playerType)) {
+                return new Computer(mark, Computer.ComputerLevel.HARD);
+            }
+
+            if ("user".equals(playerType)) {
+                return new Human(mark);
+            }
+            return null;
+        }
+    }
+  learner_created: true
+- name: src/tictactoe/Computer.java
+  visible: true
+  text: |
+    package tictactoe;
+
+    import java.util.Random;
+
+    class Computer extends Player {
+
+        enum ComputerLevel {
+            EASY, MEDIUM, HARD
+        }
+
+        ComputerLevel level;
+
+        Computer(char mark, ComputerLevel level) {
+            super(mark);
+            this.level = level;
+        }
+
+        public Game.Status makeMove() {
+            Game.Move move = null;
+            switch (this.level) {
+                case EASY:
+                    System.out.println("Making move level \"easy\"");
+                    move = findEasyMove();
+                    break;
+                case MEDIUM:
+                    System.out.println("Making move level \"medium\"");
+                    move = findMediumMove();
+                    break;
+                case HARD:
+                    System.out.println("Making move level \"hard\"");
+                    move = findHardMove();
+                    break;
+            }
+            assert move != null;
+            this.grid.markCell(move.getRow(), move.getCol(), this.mark);
+            return this.grid.statusAfterMove(move.getRow(), move.getCol());
+        }
+
+        private Game.Move findHardMove() {
+            return null;
+        }
+
+        private Game.Move findMediumMove() {
+            Game.Move move = winningMoveFor(this.mark);
+            if (move != null) return move;
+
+            move = winningMoveFor(this.opponent(this.mark));
+            if (move != null) return move;
+
+            return findEasyMove();
+        }
+
+        private Game.Move findEasyMove() {
+            Random rand = new Random(System.currentTimeMillis());
+            while (true) {
+                int row = rand.nextInt(3);
+                int col = rand.nextInt(3);
+                if (!this.grid.isCellEmpty(row, col)) continue;
+
+                return new Game.Move(row, col);
+            }
+        }
+    }
+  learner_created: true
+- name: src/tictactoe/Game.java
+  visible: true
+  text: |
+    package tictactoe;
+
+    import java.util.ArrayList;
+
+    class Game {
+
+        static final ArrayList<String> playerTypes = new ArrayList<>();
+
+        static {
+            playerTypes.add("easy");
+            playerTypes.add("medium");
+            playerTypes.add("hard");
+            playerTypes.add("user");
+        }
+
+        enum Status {
+            NOT_FINISHED, DRAW, X_WINS, O_WINS
+        }
+
+        private final Grid grid;
+
+        private Status status = Status.NOT_FINISHED;
+
+        private final Player[] players;
+        private int currentPlayerIndex = 0;
+
+        Game(String player1Name, String player2Name) {
+
+            Player playerX = PlayerCreator.createPlayer(player1Name, 'X');
+            Player playerO = PlayerCreator.createPlayer(player2Name, 'O');
+
+            this.grid = new Grid();
+
+            assert playerX != null;
+            assert playerO != null;
+            playerX.setGrid(this.grid);
+            playerO.setGrid(this.grid);
+
+            this.players = new Player[]{playerX, playerO};
+        }
+
+        public void start() {
+
+            while (this.status == Status.NOT_FINISHED) {
+                this.printGrid();
+                this.makeMove();
+                this.switchPlayers();
+            }
+            this.printGameStatus();
+        }
+
+        public void printGrid() {
+            System.out.println(this.grid);
+        }
+
+        public void makeMove() {
+            assert this.status == Status.NOT_FINISHED;
+            this.status = this.currentPlayer().makeMove();
+        }
+
+        void switchPlayers() {
+            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % 2;
+        }
+
+        private Player currentPlayer() {
+            return this.players[this.currentPlayerIndex];
+        }
+
+        void printGameStatus() {
+            printGrid();
+            switch (this.status) {
+                case DRAW:
+                    System.out.println("Draw");
+                    break;
+                case O_WINS:
+                    System.out.println("O wins");
+                    break;
+                case X_WINS:
+                    System.out.println("X wins");
+                    break;
+                case NOT_FINISHED:
+                    System.out.println("Game not finished");
+                    break;
+            }
+        }
+
+        static class Move {
+
+            private final int row;
+            private final int col;
+
+            Move(int row, int col) {
+                this.row = row;
+                this.col = col;
+            }
+
+            public int getRow() {
+                return row;
+            }
+
+            public int getCol() {
+                return col;
+            }
+        }
+    }
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/81/stages/451/implement#comment
 status: Unchecked
 record: -1

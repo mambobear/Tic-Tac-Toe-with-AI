@@ -7,7 +7,7 @@ class Human extends Player {
         super(mark);
     }
 
-    public Game.Move makeMove() {
+    public Game.Status makeMove() {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Enter the coordinates: ");
@@ -31,11 +31,13 @@ class Human extends Player {
                 System.out.println(e.getMessage());
                 continue;
             }
-            if (!this.game.cellEmpty(row - 1, col - 1)) {
+            if (!this.grid.isCellEmpty(row - 1, col - 1)) {
                 System.out.println("This cell is occupied! Choose another one!");
                 continue;
             }
-            return new Game.Move(row - 1, col - 1);
+
+            this.grid.markCell(row - 1, col - 1, this.mark);
+            return this.grid.statusAfterMove(row - 1, col - 1);
         }
     }
 

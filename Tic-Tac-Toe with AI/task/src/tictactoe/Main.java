@@ -7,24 +7,28 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.print("Input command: ");
-            String[] command = scanner.nextLine().split("\\s+");
-            if (!isValid(command)) {
-                System.out.println("Bad parameters!");
-                continue;
-            }
+            String[] command = getCommand(scanner);
+
             String commandName = command[0];
             if ("exit".equals(commandName)) return;
 
             String player1Name = command[1];
             String player2Name = command[2];
 
-
-            Player player1 = PlayerCreator.createPlayer(player1Name, 'X');
-            Player player2 = PlayerCreator.createPlayer(player2Name, 'O');
-
-            Game game = new Game(player1, player2);
+            Game game = new Game(player1Name, player2Name);
             game.start();
+        }
+    }
+
+    private static String[] getCommand(Scanner scanner) {
+        while(true) {
+            System.out.print("Input command: ");
+            String[] command = scanner.nextLine().split("\\s+");
+            if (!isValid(command)) {
+                System.out.println("Bad parameters!");
+                continue;
+            }
+            return command;
         }
     }
 

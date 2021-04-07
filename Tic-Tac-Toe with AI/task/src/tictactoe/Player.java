@@ -1,16 +1,26 @@
 package tictactoe;
 
 abstract class Player {
-    abstract Game.Move makeMove();
+
     final char mark;
-    Game game = null;
+    Grid grid = null;
+
+    abstract Game.Status makeMove();
 
     Player(char mark) {
         this.mark = mark;
     }
 
-    public void setGame(Game game) {
-        this.game = game;
+    public void setGrid(Grid grid) {
+        this.grid = grid;
+    }
+
+    public char opponent(char mark) {
+        return mark == 'X' ? 'O' : 'X';
+    }
+
+    Game.Move winningMoveFor(char mark) {
+        return this.grid.winningMoveFor(mark, opponent(mark));
     }
 }
 

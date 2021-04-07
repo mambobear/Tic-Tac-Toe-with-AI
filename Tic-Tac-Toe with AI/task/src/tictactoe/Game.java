@@ -18,33 +18,35 @@ class Game {
     }
 
     private final Grid grid;
-    private Player currentPlayer;
+
     private Status status = Status.NOT_FINISHED;
 
     private final Player[] players;
     private int currentPlayerIndex = 0;
 
-    Game(Player playerX, Player playerO) {
+    Game(String player1Name, String player2Name) {
+
+        Player playerX = PlayerCreator.createPlayer(player1Name, 'X');
+        Player playerO = PlayerCreator.createPlayer(player2Name, 'O');
 
         this.grid = new Grid();
 
+        assert playerX != null;
+        assert playerO != null;
+        playerX.setGrid(this.grid);
+        playerO.setGrid(this.grid);
+
         this.players = new Player[]{playerX, playerO};
-        playerX.setGame(this);
-        playerO.setGame(this);
-        this.currentPlayer = playerX;
     }
 
     public void start() {
-        while (this.getStatus() == Status.NOT_FINISHED) {
+
+        while (this.status == Status.NOT_FINISHED) {
             this.printGrid();
             this.makeMove();
             this.switchPlayers();
         }
         this.printGameStatus();
-    }
-
-    public Status getStatus() {
-        return status;
     }
 
     public void printGrid() {
@@ -53,26 +55,15 @@ class Game {
 
     public void makeMove() {
         assert this.status == Status.NOT_FINISHED;
-        Move move = this.currentPlayer.makeMove();
-        this.grid.markMove(move, this.currentPlayer.mark);
-        this.status = getStatusAfter(move);
-    }
-
-    public char opponent(char mark) {
-        return mark == 'X' ? 'O' : 'X';
-    }
-
-    public Move winningMoveFor(char mark) {
-        return this.grid.winningMoveFor(mark, opponent(mark));
-    }
-
-    boolean cellEmpty(int row, int col) {
-        return grid.isCellEmpty(row, col);
+        this.status = this.currentPlayer().makeMove();
     }
 
     void switchPlayers() {
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % 2;
-        this.currentPlayer = players[this.currentPlayerIndex];
+    }
+
+    private Player currentPlayer() {
+        return this.players[this.currentPlayerIndex];
     }
 
     void printGameStatus() {
@@ -91,16 +82,6 @@ class Game {
                 System.out.println("Game not finished");
                 break;
         }
-    }
-
-    private Status getStatusAfter(Move move) {
-        if (hasLineAt(move)) return (this.currentPlayer.mark == 'X') ? Status.X_WINS : Status.O_WINS;
-        if (this.grid.isFull()) return Status.DRAW;
-        return Status.NOT_FINISHED;
-    }
-
-    private boolean hasLineAt(Move move) {
-        return this.grid.hasLineAt(move.getRow(), move.getCol());
     }
 
     static class Move {
