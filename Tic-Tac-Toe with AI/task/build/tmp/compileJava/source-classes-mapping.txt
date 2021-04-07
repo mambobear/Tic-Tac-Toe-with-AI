@@ -1,6 +1,10 @@
 tictactoe/Main.java
+ tictactoe.Computer
  tictactoe.Game
  tictactoe.Game$1
- tictactoe.Game$Move
  tictactoe.Game$Status
+ tictactoe.Human
  tictactoe.Main
+ tictactoe.Move
+ tictactoe.Player
+ tictactoe.PlayerCreator

@@ -716,6 +716,24 @@ files:
         }
     }
   learner_created: false
+- name: src/tictactoe/Game.java
+  visible: true
+  learner_created: true
+- name: src/tictactoe/Grid.java
+  visible: true
+  learner_created: true
+- name: src/tictactoe/Player.java
+  visible: true
+  learner_created: true
+- name: src/tictactoe/Human.java
+  visible: true
+  learner_created: true
+- name: src/tictactoe/Computer.java
+  visible: true
+  learner_created: true
+- name: src/tictactoe/PlayerCreator.java
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/81/stages/450/implement#comment
 status: Unchecked
 record: -1
