@@ -1,10 +1,10 @@
+tictactoe/Main.java
+ tictactoe.Main
 tictactoe/Player.java
  tictactoe.Player
  tictactoe.PlayerCreator
 tictactoe/Human.java
  tictactoe.Human
-tictactoe/Main.java
- tictactoe.Main
 tictactoe/Grid.java
  tictactoe.Grid
  tictactoe.Grid$LineStats

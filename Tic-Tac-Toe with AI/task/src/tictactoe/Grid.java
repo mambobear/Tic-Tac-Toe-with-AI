@@ -1,6 +1,10 @@
 package tictactoe;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 class Grid {
+
     static class LineStats {
 
         private int numX;
@@ -19,9 +23,18 @@ class Grid {
             if (this.numO < 3) this.numO++;
         }
 
+        private void decX() { if (this.numX > 0) this.numX--; }
+
+        private void decO() { if (this.numO > 0) this.numO--; }
+
         public void increment(char mark) {
             if (mark == 'X') this.incX();
             if (mark == 'O') this.incO();
+        }
+
+        public void decrement(char mark) {
+            if (mark == 'X') this.decX();
+            if (mark == 'O') this.decO();
         }
 
         public int numFor(char player) {
@@ -36,7 +49,7 @@ class Grid {
     private final int ROWS = 0;
     private final int COLUMNS = 1;
 
-    private final int SIZE = 3;
+    final int SIZE = 3;
     private final char[][] grid = {
             {Empty, Empty, Empty},
             {Empty, Empty, Empty},
@@ -105,6 +118,20 @@ class Grid {
         return null;
     }
 
+    ArrayList<Game.Move> availableMoves() {
+        ArrayList<Game.Move> moves = new ArrayList<>();
+        for (int row = 0; row < SIZE; row++) {
+            for (int col = 0; col < SIZE; col++) {
+                if (isCellEmpty(row, col)) moves.add(new Game.Move(row, col));
+            }
+        }
+        return moves;
+    }
+
+    public boolean isDraw() {
+        return this.nEmptyCells == 0;
+    }
+
     public void markCell(int row, int col, char mark) {
         grid[row][col] = mark;
         this.nEmptyCells--;
@@ -114,17 +141,51 @@ class Grid {
         if (row + col == SIZE - 1) antiDiagonal.increment(mark);
     }
 
+    public void unmarkCell(int row, int col, char mark) {
+        grid[row][col] = Empty;
+        this.nEmptyCells++;
+        rowAndColumnCounts[ROWS][row].decrement(mark);
+        rowAndColumnCounts[COLUMNS][col].decrement(mark);
+        if (row == col) mainDiagonal.decrement(mark);
+        if (row + col == SIZE - 1) antiDiagonal.decrement(mark);
+    }
+
     public boolean isCellEmpty(int row, int col) {
         return this.grid[row][col] == Empty;
     }
 
     Game.Status statusAfterMove(int row, int col) {
-        if (hasLineAt(row, col)) return (this.grid[row][col] == 'X') ? Game.Status.X_WINS : Game.Status.O_WINS;
+        if (hasLineAt(row, col)) {
+            return (this.grid[row][col] == 'X') ? Game.Status.X_WINS : Game.Status.O_WINS;
+        }
         if (this.nEmptyCells == 0) return Game.Status.DRAW;
         return Game.Status.NOT_FINISHED;
     }
 
     // Private methods
+    public boolean completesLine(Game.Move move, char player) {
+        int row = move.getRow();
+        int col = move.getCol();
+
+        char opponent = player == 'X' ? 'O' : 'X';
+
+        LineStats stats = rowAndColumnCounts[ROWS][row];
+        if (stats.numFor(player) == 2 && stats.numFor(opponent) == 0) return true;
+
+        stats = rowAndColumnCounts[COLUMNS][col];
+        if (stats.numFor(player) == 2 && stats.numFor(opponent) == 0) return true;
+
+        if (row == col) {
+            if (mainDiagonal.numFor(player) == 2 && mainDiagonal.numFor(opponent) == 0) return true;
+        }
+
+        if (row + col == SIZE - 1) {
+            if (antiDiagonal.numFor(player) == 2 && antiDiagonal.numFor(opponent) == 0) return true;
+        }
+
+        return false;
+    }
+
     private boolean hasLineAt(int row, int col) {
         char player = this.grid[row][col];
         return hasRowAt(row, player) || hasColumnAt(col, player) || hasDiagonalAt(row, col, player);
@@ -146,7 +207,7 @@ class Grid {
 
     private boolean hasColumnAt(int col, char player) {
         if (player == 'X') {
-            return this.rowAndColumnCounts[COLUMNS][col].numO == SIZE;
+            return this.rowAndColumnCounts[COLUMNS][col].numX == SIZE;
         }
         if (player == 'O') {
             return this.rowAndColumnCounts[COLUMNS][col].numO == SIZE;

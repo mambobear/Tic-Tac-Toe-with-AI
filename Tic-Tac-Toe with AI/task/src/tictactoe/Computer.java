@@ -37,7 +37,46 @@ class Computer extends Player {
     }
 
     private Game.Move findHardMove() {
-        return null;
+        Game.Move bestMove = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (Game.Move move : this.grid.availableMoves()) {
+            int score = evaluateMove(move, this.mark);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+        return bestMove;
+    }
+
+    private int evaluateMove(Game.Move move, char player) {
+
+        if (this.grid.completesLine(move, player)) {
+            return Integer.MAX_VALUE;
+        }
+
+        int score;
+        this.grid.markCell(move.getRow(), move.getCol(), player);
+
+        if (this.grid.isDraw()) {
+            score = 0;
+        } else {
+            char opponent = opponent(player);
+            score = - evaluatePosition(opponent);
+        }
+        this.grid.unmarkCell(move.getRow(), move.getCol(), player);
+        return score;
+    }
+
+    private int evaluatePosition(char player) {
+        int bestScore = Integer.MIN_VALUE;
+        for (Game.Move move : this.grid.availableMoves()) {
+            int score = evaluateMove(move, player);
+            if (score > bestScore) {
+                bestScore = score;
+            }
+        }
+        return bestScore;
     }
 
     private Game.Move findMediumMove() {
@@ -56,7 +95,6 @@ class Computer extends Player {
             int row = rand.nextInt(3);
             int col = rand.nextInt(3);
             if (!this.grid.isCellEmpty(row, col)) continue;
-
             return new Game.Move(row, col);
         }
     }
